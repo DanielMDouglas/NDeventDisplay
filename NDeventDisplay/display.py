@@ -13,7 +13,7 @@ import mpl_toolkits.mplot3d.art3d as art3d
 import detector
 
 def draw_boundaries(ax):
-    for it in range(0,70,2):
+    for it in range(0,detector.TPC_BORDERS.shape[0],2):
         anode1 = plt.Rectangle((detector.TPC_BORDERS[it][0][0], detector.TPC_BORDERS[it][1][0]),
                                detector.TPC_BORDERS[it][0][1]-detector.TPC_BORDERS[it][0][0], 
                                detector.TPC_BORDERS[it][1][1]-detector.TPC_BORDERS[it][1][0],
