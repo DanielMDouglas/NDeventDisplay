@@ -51,12 +51,15 @@ def draw_boundaries(ax):
         ax.plot((detector.TPC_BORDERS[it][0][1],detector.TPC_BORDERS[it][0][1]),(detector.TPC_BORDERS[it][2][0],detector.TPC_BORDERS[it+1][2][0]),
                 (detector.TPC_BORDERS[it][1][1],detector.TPC_BORDERS[it][1][1]), lw=1,color='gray')
 
-    # ax.set_ylim(consts.module_borders[pixel_plane][2][0],50)
     ax.set_xlim(detector.TPC_BORDERS[0][0][0],detector.TPC_BORDERS[-1][0][1])
     ax.set_ylim(detector.TPC_BORDERS[0][2][0],detector.TPC_BORDERS[-1][2][0])
     ax.set_zlim(detector.TPC_BORDERS[0][1][0],detector.TPC_BORDERS[-1][1][1])
 
-    ax.set_box_aspect((4,8,4))
+    xSpan = np.max(detector.TPC_BORDERS[:,0,:]) - np.min(detector.TPC_BORDERS[:,0,:])
+    ySpan = np.max(detector.TPC_BORDERS[:,2,:]) - np.min(detector.TPC_BORDERS[:,2,:])
+    zSpan = np.max(detector.TPC_BORDERS[:,1,:]) - np.min(detector.TPC_BORDERS[:,1,:])
+
+    ax.set_box_aspect((xSpan/100, ySpan/100, zSpan/100))
     ax.grid(False)
     ax.xaxis.set_major_locator(plt.MaxNLocator(5))
     ax.yaxis.set_major_locator(plt.MaxNLocator(5))                                    
@@ -75,7 +78,8 @@ def plot_event(filename, event_id, configs):
 
     t0 = t0_grp[event_id][0]
     print("--------event_id: ", event_id)
-    pckt_mask = (packets['timestamp'] > t0) & (packets['timestamp'] < t0 + 50000)
+    # pckt_mask = (packets['timestamp'] > t0) & (packets['timestamp'] < t0 + 50000)
+    pckt_mask = (packets['timestamp'] > 0)
     packets_ev = packets[pckt_mask]
 
     fig = plt.figure()
