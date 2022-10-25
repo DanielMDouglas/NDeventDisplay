@@ -3,7 +3,7 @@ import numpy as np
 
 from LarpixParser import event_parser as EvtParser
 from LarpixParser import hit_parser as HitParser
-from LarpixParser import geom_dict_loader as DictLoader
+from LarpixParser.geom_to_dict import multi_layout_to_dict_nopickle
 from LarpixParser import util as util
 
 import matplotlib.pyplot as plt
@@ -68,7 +68,8 @@ def plot_event(filename, event_id, configs):
     f = h5py.File(filename, 'r')
     packets = f['packets']
  
-    geom_dict = DictLoader.load_geom_dict(configs['geom'])
+    geom_dict = multi_layout_to_dict_nopickle(configs['pixel'],
+                                              configs['detprop'])
     run_config = util.get_run_config(configs['detprop'])
 
     detector.set_detector_properties(configs['detprop'],
@@ -78,8 +79,8 @@ def plot_event(filename, event_id, configs):
 
     t0 = t0_grp[event_id][0]
     print("--------event_id: ", event_id)
-    # pckt_mask = (packets['timestamp'] > t0) & (packets['timestamp'] < t0 + 50000)
-    pckt_mask = (packets['timestamp'] > 0)
+    pckt_mask = (packets['timestamp'] > t0) & (packets['timestamp'] < t0 + 50000)
+    # pckt_mask = (packets['timestamp'] > t0)
     packets_ev = packets[pckt_mask]
 
     fig = plt.figure()
@@ -102,9 +103,9 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--eventid', type = int,
                         default = 0,
                         help = "geometry layout pickle file")
-    parser.add_argument('-g', '--geometry', type = str,
-                        default = "../../larpix_readout_parser/config_repo/dict_repo/multi_tile_layout-3.0.40.pkl",
-                        help = "geometry layout pickle file")
+    # parser.add_argument('-g', '--geometry', type = str,
+    #                     default = "../../larpix_readout_parser/config_repo/dict_repo/multi_tile_layout-3.0.40.pkl",
+                        # help = "geometry layout pickle file")
     parser.add_argument('-p', '--pixelfile', type = str,
                         default = "../../larpix_readout_parser/config_repo/multi_tile_layout-3.0.40.yaml",
                         help = "pixel layout yaml file")
@@ -115,6 +116,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     plot_event(args.infile, args.eventid,
-               {'geom': args.geometry,
-                'pixel': args.pixelfile,
+               {'pixel': args.pixelfile,
                 'detprop': args.detprop})
