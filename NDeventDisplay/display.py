@@ -39,17 +39,25 @@ def draw_boundaries(ax):
         z_cathode = (detector.TPC_BORDERS[it][2][0]+detector.TPC_BORDERS[it+1][2][0])/2
         art3d.pathpatch_2d_to_3d(cathode, z=z_cathode, zdir="y")
 
-        ax.plot((detector.TPC_BORDERS[it][0][0],detector.TPC_BORDERS[it][0][0]),(detector.TPC_BORDERS[it][2][0],detector.TPC_BORDERS[it+1][2][0]),
-                (detector.TPC_BORDERS[it][1][0],detector.TPC_BORDERS[it][1][0]), lw=1,color='gray')
+        ax.plot((detector.TPC_BORDERS[it][0][0],detector.TPC_BORDERS[it][0][0]),
+                (detector.TPC_BORDERS[it][2][0],detector.TPC_BORDERS[it+1][2][0]),
+                (detector.TPC_BORDERS[it][1][0],detector.TPC_BORDERS[it][1][0]),
+                lw=1,color='gray')
         
-        ax.plot((detector.TPC_BORDERS[it][0][0],detector.TPC_BORDERS[it][0][0]),(detector.TPC_BORDERS[it][2][0],detector.TPC_BORDERS[it+1][2][0]),
-                (detector.TPC_BORDERS[it][1][1],detector.TPC_BORDERS[it][1][1]), lw=1,color='gray')
+        ax.plot((detector.TPC_BORDERS[it][0][0],detector.TPC_BORDERS[it][0][0]),
+                (detector.TPC_BORDERS[it][2][0],detector.TPC_BORDERS[it+1][2][0]),
+                (detector.TPC_BORDERS[it][1][1],detector.TPC_BORDERS[it][1][1]),
+                lw=1,color='gray')
 
-        ax.plot((detector.TPC_BORDERS[it][0][1],detector.TPC_BORDERS[it][0][1]),(detector.TPC_BORDERS[it][2][0],detector.TPC_BORDERS[it+1][2][0]),
-                (detector.TPC_BORDERS[it][1][0],detector.TPC_BORDERS[it][1][0]), lw=1,color='gray')
+        ax.plot((detector.TPC_BORDERS[it][0][1],detector.TPC_BORDERS[it][0][1]),
+                (detector.TPC_BORDERS[it][2][0],detector.TPC_BORDERS[it+1][2][0]),
+                (detector.TPC_BORDERS[it][1][0],detector.TPC_BORDERS[it][1][0]),
+                lw=1,color='gray')
 
-        ax.plot((detector.TPC_BORDERS[it][0][1],detector.TPC_BORDERS[it][0][1]),(detector.TPC_BORDERS[it][2][0],detector.TPC_BORDERS[it+1][2][0]),
-                (detector.TPC_BORDERS[it][1][1],detector.TPC_BORDERS[it][1][1]), lw=1,color='gray')
+        ax.plot((detector.TPC_BORDERS[it][0][1],detector.TPC_BORDERS[it][0][1]),
+                (detector.TPC_BORDERS[it][2][0],detector.TPC_BORDERS[it+1][2][0]),
+                (detector.TPC_BORDERS[it][1][1],detector.TPC_BORDERS[it][1][1]),
+                lw=1,color='gray')
 
     ax.set_xlim(detector.TPC_BORDERS[0][0][0],detector.TPC_BORDERS[-1][0][1])
     ax.set_ylim(detector.TPC_BORDERS[0][2][0],detector.TPC_BORDERS[-1][2][0])
@@ -103,9 +111,6 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--eventid', type = int,
                         default = 0,
                         help = "geometry layout pickle file")
-    # parser.add_argument('-g', '--geometry', type = str,
-    #                     default = "../../larpix_readout_parser/config_repo/dict_repo/multi_tile_layout-3.0.40.pkl",
-                        # help = "geometry layout pickle file")
     parser.add_argument('-p', '--pixelfile', type = str,
                         default = "../../larpix_readout_parser/config_repo/multi_tile_layout-3.0.40.yaml",
                         help = "pixel layout yaml file")
