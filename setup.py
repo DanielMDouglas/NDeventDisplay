@@ -12,7 +12,7 @@ setuptools.setup(
     description="A package for visualizing ND events in the LArPix format",
     url="https://github.com/DanielMDouglas/NDeventDisplay",
     packages=setuptools.find_packages(),
-    install_requires=["numpy", "h5py", "matplotlib", "LarpixParser"],
+    install_requires=["numpy", "h5py", "matplotlib>=3.6", "LarpixParser"],
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",
