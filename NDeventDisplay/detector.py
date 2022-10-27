@@ -7,7 +7,7 @@ import yaml
 
 from collections import defaultdict
 
-from units import mm, cm, V, kV
+from .units import mm, cm, V, kV
 
 #: Detector temperature in K
 TEMPERATURE = 87.17

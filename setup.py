@@ -7,7 +7,8 @@ VER = "0.0.1"
 reqs = ["numpy",
         "h5py",
         "matplotlib>=3.6",
-        "LarpixParser @ git+https://github.com/DanielMDouglas/larpix_readout_parser.git"]
+        "LarpixParser @ git+https://github.com/DanielMDouglas/larpix_readout_parser.git",
+        "tk"]
 
 setuptools.setup(
     name="NDeventDisplay",
