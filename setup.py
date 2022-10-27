@@ -19,6 +19,7 @@ setuptools.setup(
     url="https://github.com/DanielMDouglas/NDeventDisplay",
     packages=setuptools.find_packages(),
     install_requires=reqs,
+    scripts=["bin/NDeventDisplay"],
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",
