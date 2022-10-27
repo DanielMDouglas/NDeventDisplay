@@ -6,9 +6,13 @@ from LarpixParser import hit_parser as HitParser
 from LarpixParser.geom_to_dict import multi_layout_to_dict_nopickle
 from LarpixParser import util as util
 
+from tkinter import *
+
 import matplotlib.pyplot as plt
 from matplotlib import cm, colors
 import mpl_toolkits.mplot3d.art3d as art3d
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
+                                               NavigationToolbar2Tk)
 
 import detector
 
@@ -72,36 +76,69 @@ def draw_boundaries(ax):
     ax.xaxis.set_major_locator(plt.MaxNLocator(5))
     ax.yaxis.set_major_locator(plt.MaxNLocator(5))                                    
 
-def plot_event(filename, event_id, configs): 
-    f = h5py.File(filename, 'r')
-    packets = f['packets']
- 
-    geom_dict = multi_layout_to_dict_nopickle(configs['pixel'],
-                                              configs['detprop'])
-    run_config = util.get_run_config(configs['detprop'])
-
-    detector.set_detector_properties(configs['detprop'],
-                                     configs['pixel'])
-    
-    t0_grp = EvtParser.get_t0(packets)
-
+def plot_event(ax, packets, event_id, t0_grp, geom_dict, run_config):
     t0 = t0_grp[event_id][0]
     print("--------event_id: ", event_id)
-    pckt_mask = (packets['timestamp'] > t0) & (packets['timestamp'] < t0 + 50000)
+    pckt_mask = (packets['timestamp'] > t0) & (packets['timestamp'] < t0 + 3330)
     # pckt_mask = (packets['timestamp'] > t0)
     packets_ev = packets[pckt_mask]
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection = '3d')
+    x,y,z,dQ = HitParser.hit_parser_charge(t0,
+                                           packets_ev,
+                                           geom_dict,
+                                           run_config)
+
+    ax.scatter(np.array(z)/10,
+               np.array(x)/10,
+               np.array(y)/10,
+               c = dQ)
         
-    x,y,z,dQ = HitParser.hit_parser_charge(t0, packets_ev, geom_dict, run_config)
+def main(args):
+    if not args.detector:
+        config = {'pixel': args.pixellayout,
+                  'detprop': args.detprop}
+    elif args.detector.lower() == "ndlar":
+        config = {'pixel': "../config/multi_tile_layout-3.0.40.yaml",
+                  'detprop': "../config/ndlar-module.yaml"}
+    elif args.detector.lower() == "module0":
+        config = {'pixel': "../config/multi_tile_layout-2.3.16.yaml",
+                  'detprop': "../config/module0.yaml"}
+
+    f = h5py.File(args.infile, 'r')
+    packets = f['packets']
+ 
+    geom_dict = multi_layout_to_dict_nopickle(config['pixel'],
+                                              config['detprop'])
+    run_config = util.get_run_config(config['detprop'])
+
+    detector.set_detector_properties(config['detprop'],
+                                     config['pixel'])
+    
+    t0_grp = EvtParser.get_t0(packets)
+
+    window = Tk()
+
+    window.title('ND Event Viewer')
+
+    window.geometry("500x500")
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection = '3d')    
 
     draw_boundaries(ax)
 
-    ax.scatter(np.array(z)/10, np.array(x)/10, np.array(y)/10, c = dQ)
-        
-    plt.show()
+    plot_event(ax, packets, args.eventid, t0_grp,
+               geom_dict, run_config)
 
+    canvas = FigureCanvasTkAgg(fig, master = window)
+    canvas.draw()
+    canvas.get_tk_widget().pack()
+
+    toolbar = NavigationToolbar2Tk(canvas, window)
+    toolbar.update()
+    
+    window.mainloop()
+    
 if __name__ == '__main__':
     import argparse
 
@@ -111,15 +148,16 @@ if __name__ == '__main__':
     parser.add_argument('-e', '--eventid', type = int,
                         default = 0,
                         help = "geometry layout pickle file")
-    parser.add_argument('-p', '--pixelfile', type = str,
+    parser.add_argument('-l', '--pixellayout', type = str,
                         default = "../../larpix_readout_parser/config_repo/multi_tile_layout-3.0.40.yaml",
                         help = "pixel layout yaml file")
-    parser.add_argument('-d', '--detprop', type = str,
+    parser.add_argument('-p', '--detprop', type = str,
                         default = "../../larpix_readout_parser/config_repo/ndlar-module.yaml",
                         help = "detector properties yaml file")
+    parser.add_argument('-d', '--detector', type = str,
+                        default = None,
+                        help = "detector preset (\"NDLAr\" or \"Module0\")")
 
     args = parser.parse_args()
 
-    plot_event(args.infile, args.eventid,
-               {'pixel': args.pixelfile,
-                'detprop': args.detprop})
+    main(args)

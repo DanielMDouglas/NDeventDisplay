@@ -4,6 +4,11 @@ import setuptools
 
 VER = "0.0.1"
 
+reqs = ["numpy",
+        "h5py",
+        "matplotlib>=3.6",
+        "LarpixParser @ git+https://github.com/DanielMDouglas/larpix_readout_parser.git"]
+
 setuptools.setup(
     name="NDeventDisplay",
     version=VER,
@@ -12,7 +17,7 @@ setuptools.setup(
     description="A package for visualizing ND events in the LArPix format",
     url="https://github.com/DanielMDouglas/NDeventDisplay",
     packages=setuptools.find_packages(),
-    install_requires=["numpy", "h5py", "matplotlib>=3.6", "LarpixParser"],
+    install_requires=reqs,
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",
