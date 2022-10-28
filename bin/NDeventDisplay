@@ -7,6 +7,7 @@ from LarpixParser.geom_to_dict import multi_layout_to_dict_nopickle
 from LarpixParser import util
 
 from NDeventDisplay import plotting, detector
+from NDeventDisplay.utils import make_config
 
 from tkinter import *
 
@@ -16,15 +17,7 @@ from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
                                                NavigationToolbar2Tk)
 
 def main(args):
-    if not args.detector:
-        config = {'pixel': args.pixellayout,
-                  'detprop': args.detprop}
-    elif args.detector.lower() == "ndlar":
-        config = {'pixel': "../config/multi_tile_layout-3.0.40.yaml",
-                  'detprop': "../config/ndlar-module.yaml"}
-    elif args.detector.lower() == "module0":
-        config = {'pixel': "../config/multi_tile_layout-2.3.16.yaml",
-                  'detprop': "../config/module0.yaml"}
+    config = make_config(args)
 
     f = h5py.File(args.infile, 'r')
     packets = f['packets']
@@ -68,10 +61,10 @@ if __name__ == '__main__':
                         default = 0,
                         help = "geometry layout pickle file")
     parser.add_argument('-l', '--pixellayout', type = str,
-                        default = "../config/multi_tile_layout-3.0.40.yaml",
+                        default = None,
                         help = "pixel layout yaml file")
     parser.add_argument('-p', '--detprop', type = str,
-                        default = "../config/ndlar-module.yaml",
+                        default = None,
                         help = "detector properties yaml file")
     parser.add_argument('-d', '--detector', type = str,
                         default = "ndlar",

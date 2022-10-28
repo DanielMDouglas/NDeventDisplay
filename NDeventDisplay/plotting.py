@@ -5,8 +5,6 @@ from LarpixParser import hit_parser as HitParser
 import matplotlib.pyplot as plt
 from matplotlib import cm, colors
 import mpl_toolkits.mplot3d.art3d as art3d
-from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
-                                               NavigationToolbar2Tk)
 
 from . import detector
 
