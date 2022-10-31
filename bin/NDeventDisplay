@@ -32,22 +32,72 @@ def main(args):
 
     window.title('ND Event Viewer')
 
-    window.geometry("500x500")
+    figWidth, figHeight = 640, 480
+    dpi = 80
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection = '3d')    
+    winWidth, winHeight = figWidth, figHeight+30
+
+    window.geometry("x".join([str(winWidth), str(winHeight)]))
+
+    fig = plt.figure(figsize=(figWidth/dpi, figHeight/dpi),
+                     dpi = dpi)
+    ax = fig.add_subplot(111, projection = '3d')
 
     plotting.draw_boundaries(ax, config)
 
-    plotting.plot_event(ax, packets, args.eventid, t0_grp,
+    current_event = args.eventid
+    plotting.plot_event(ax, packets, current_event, t0_grp,
                         geom_dict, run_config)
 
     canvas = FigureCanvasTkAgg(fig, master = window)
     canvas.draw()
-    canvas.get_tk_widget().pack()
+    canvas.get_tk_widget().place(x = 0, y = 0)
 
-    toolbar = NavigationToolbar2Tk(canvas, window)
-    toolbar.update()
+    box = Entry(width = 3)
+    box.insert(END, str(args.eventid))
+    box.place(x = figWidth/2 - 1.5, y = figHeight)
+
+    btn_back = Button(text = "previous",
+                      width = 5,
+                      height = 1)
+    btn_back.place(x = 1.*figWidth/3 - 10, y = figHeight)
+    
+    btn_next = Button(text = "next",
+                      width = 5,
+                      height = 1)
+    btn_next.place(x = 2.*figWidth/3 - 10, y = figHeight)
+
+    def redraw_event():
+        ax.clear()
+    
+        plotting.draw_boundaries(ax, config)
+
+        plotting.plot_event(ax, packets, args.eventid, t0_grp,
+                            geom_dict, run_config)
+
+        box.delete(0, 'end')
+        box.insert(END, str(args.eventid))
+
+        canvas.draw()
+
+    def goto_event(event):
+        args.eventid = int(box.get())
+        print(box.get())
+        redraw_event()
+
+    def decrement_event(event):
+        if args.eventid > 0:
+            args.eventid -= 1
+        redraw_event()
+
+    def increment_event(event):
+        args.eventid += 1
+        redraw_event()
+        
+    window.bind("<Return>", goto_event)
+
+    btn_back.bind("<Button-1>", decrement_event)
+    btn_next.bind("<Button-1>", increment_event)
     
     window.mainloop()
     
