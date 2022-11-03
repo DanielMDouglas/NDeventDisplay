@@ -27,7 +27,8 @@ def main(args):
     run_config = util.get_run_config(config['detprop'])
     
     t0_grp = EvtParser.get_t0(packets)
-
+    maxEventID = t0_grp.shape[0]
+    
     window = Tk()
 
     window.title('ND Event Viewer')
@@ -82,7 +83,6 @@ def main(args):
 
     def goto_event(event):
         args.eventid = int(box.get())
-        print(box.get())
         redraw_event()
 
     def decrement_event(event):
@@ -91,7 +91,8 @@ def main(args):
         redraw_event()
 
     def increment_event(event):
-        args.eventid += 1
+        if args.eventid < maxEventID - 1:
+            args.eventid += 1
         redraw_event()
         
     window.bind("<Return>", goto_event)
