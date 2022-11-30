@@ -3,7 +3,7 @@
 import h5py
 
 from LarpixParser import event_parser as EvtParser
-from LarpixParser.geom_to_dict import multi_layout_to_dict_nopickle
+from LarpixParser.geom_to_dict import larpix_layout_to_dict
 from LarpixParser import util
 
 from NDeventDisplay import plotting, detector
@@ -21,10 +21,13 @@ def main(args):
 
     f = h5py.File(args.infile, 'r')
     packets = f['packets']
- 
-    geom_dict = multi_layout_to_dict_nopickle(config['pixel'],
-                                              config['detprop'])
-    run_config = util.get_run_config(config['detprop'])
+    tracks = f['tracks']
+    assn = f['mc_packets_assn']
+    
+    geom_dict = larpix_layout_to_dict(config['larpix_layout_name'],
+                                      save_dict = False)
+    run_config = util.get_run_config(config['detprop_name'],
+                                     use_builtin = True)
     
     t0_grp = EvtParser.get_t0(packets)
     maxEventID = t0_grp.shape[0]
@@ -44,37 +47,31 @@ def main(args):
                      dpi = dpi)
     ax = fig.add_subplot(111, projection = '3d')
 
-    plotting.draw_boundaries(ax, config)
-
+    draw_packets = BooleanVar()
+    draw_packets.set(True)
+    
+    draw_tracks = BooleanVar()
+    draw_tracks.set(False)
+    
     current_event = args.eventid
-    plotting.plot_event(ax, packets, current_event, t0_grp,
-                        geom_dict, run_config)
 
     canvas = FigureCanvasTkAgg(fig, master = window)
     canvas.draw()
     canvas.get_tk_widget().place(x = 0, y = 0)
 
-    box = Entry(width = 3)
-    box.insert(END, str(args.eventid))
-    box.place(x = figWidth/2 - 1.5, y = figHeight)
-
-    btn_back = Button(text = "previous",
-                      width = 5,
-                      height = 1)
-    btn_back.place(x = 1.*figWidth/3 - 10, y = figHeight)
-    
-    btn_next = Button(text = "next",
-                      width = 5,
-                      height = 1)
-    btn_next.place(x = 2.*figWidth/3 - 10, y = figHeight)
-
-    def redraw_event():
+    def draw_event():
         ax.clear()
     
         plotting.draw_boundaries(ax, config)
 
-        plotting.plot_event(ax, packets, args.eventid, t0_grp,
-                            geom_dict, run_config)
+        if draw_packets.get():
+            plotting.plot_event(ax, packets, args.eventid, t0_grp,
+                                geom_dict, run_config)
+
+        if draw_tracks.get():
+            plotting.plot_tracks(ax, packets, tracks, assn,
+                                 args.eventid, t0_grp,
+                                 geom_dict, run_config)
 
         box.delete(0, 'end')
         box.insert(END, str(args.eventid))
@@ -83,22 +80,54 @@ def main(args):
 
     def goto_event(event):
         args.eventid = int(box.get())
-        redraw_event()
+        draw_event()
 
     def decrement_event(event):
         if args.eventid > 0:
             args.eventid -= 1
-        redraw_event()
+        draw_event()
 
     def increment_event(event):
         if args.eventid < maxEventID - 1:
             args.eventid += 1
-        redraw_event()
+        draw_event()
+
+    box = Entry(width = 3)
+    box.insert(END, str(args.eventid))
+    box.place(x = figWidth/2 - 1.5 - 100, y = figHeight)
+
+    btn_back = Button(text = "previous",
+                      width = 5,
+                      height = 1)
+    btn_back.place(x = 1.*figWidth/3 - 10 - 100, y = figHeight)
+    
+    btn_next = Button(text = "next",
+                      width = 5,
+                      height = 1)
+    btn_next.place(x = 2.*figWidth/3 - 10 - 100, y = figHeight)
+
+    cPackets = Checkbutton(window, text = 'packets',
+                           variable = draw_packets,
+                           onvalue = True,
+                           offvalue = False,
+                           command = draw_event)
+    cPackets.place(x = 2.*figWidth/3, y = figHeight)
+
+    cTracks = Checkbutton(window, text = 'tracks',
+                          variable = draw_tracks,
+                          onvalue = True,
+                          offvalue = False,
+                          command = draw_event)
+    cTracks.place(x = 2.*figWidth/3 + 100, y = figHeight)
         
     window.bind("<Return>", goto_event)
+    window.bind("<Right>", increment_event)
+    window.bind("<Left>", decrement_event)
 
     btn_back.bind("<Button-1>", decrement_event)
     btn_next.bind("<Button-1>", increment_event)
+
+    draw_event()
     
     window.mainloop()
     

@@ -1,17 +1,20 @@
 import numpy as np
 
 from LarpixParser import hit_parser as HitParser
+from LarpixParser import event_parser as EvtParser
 
 import matplotlib.pyplot as plt
 from matplotlib import cm, colors
 import mpl_toolkits.mplot3d.art3d as art3d
 
+from SLACplots import colors
+
 from . import detector
 
 def draw_boundaries(ax, config):
 
-    detector.set_detector_properties(config['detprop'],
-                                     config['pixel'])
+    detector.set_detector_properties(config['detpropFile'],
+                                     config['pixelFile'])
 
     for it in range(0,detector.TPC_BORDERS.shape[0],2):
         anode1 = plt.Rectangle((detector.TPC_BORDERS[it][0][0], detector.TPC_BORDERS[it][1][0]),
@@ -76,15 +79,56 @@ def plot_event(ax, packets, event_id, t0_grp, geom_dict, run_config):
     t0 = t0_grp[event_id][0]
     print("--------event_id: ", event_id)
     pckt_mask = (packets['timestamp'] > t0) & (packets['timestamp'] < t0 + 3330)
-    # pckt_mask = (packets['timestamp'] > t0)
     packets_ev = packets[pckt_mask]
 
     x,y,z,dQ = HitParser.hit_parser_charge(t0,
                                            packets_ev,
                                            geom_dict,
-                                           run_config)
+                                           run_config,
+                                           drift_model = 1)
 
     ax.scatter(np.array(z)/10,
                np.array(x)/10,
                np.array(y)/10,
-               c = dQ)
+               c = dQ,
+               cmap = 'SLACjet')
+
+def plot_tracks(ax, packets, tracks, assn, event_id, t0_grp, geom_dict, run_config):
+    t0 = t0_grp[event_id][0]
+    print("--------event_id: ", event_id)
+    pckt_mask = (packets['timestamp'] > t0) & (packets['timestamp'] < t0 + 3330)
+    track_ev_id = np.unique(EvtParser.packet_to_eventid(assn, tracks)[pckt_mask])
+    print(track_ev_id)
+
+    track_mask = tracks['eventID'] == track_ev_id
+    tracks_ev = tracks[track_mask]
+
+    # x,y,z,dQ = HitParser.hit_parser_charge(t0,
+    #                                        packets_ev,
+    #                                        geom_dict,
+    #                                        run_config)
+
+    # x, y, z, dE = tracks['x'], tracks['y'], tracks['z'], tracks['dE']
+
+    xStart = tracks_ev['x_start']
+    yStart = tracks_ev['y_start']
+    zStart = tracks_ev['z_start']
+
+    xEnd = tracks_ev['x_end']
+    yEnd = tracks_ev['y_end']
+    zEnd = tracks_ev['z_end']
+
+    # ax.scatter(np.array(x),
+    #            np.array(z),
+    #            np.array(y),
+    #            c = dE)
+    xSegs = np.array([xStart, xEnd]).T
+    ySegs = np.array([yStart, yEnd]).T
+    zSegs = np.array([zStart, zEnd]).T
+
+    for xSeg, ySeg, zSeg in zip(xSegs, ySegs, zSegs):
+        ax.plot(xSeg,
+                zSeg,
+                ySeg,
+                color = colors.SLACred
+                )
