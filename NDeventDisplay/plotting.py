@@ -78,7 +78,10 @@ def draw_boundaries(ax, config):
 def plot_event(ax, packets, event_id, t0_grp, geom_dict, run_config):
     t0 = t0_grp[event_id][0]
     print("--------event_id: ", event_id)
-    pckt_mask = (packets['timestamp'] > t0) & (packets['timestamp'] < t0 + 3330)
+    ti = t0 + run_config['time_interval'][0]*run_config['CLOCK_CYCLE']
+    tf = t0 + run_config['time_interval'][1]*run_config['CLOCK_CYCLE']
+
+    pckt_mask = (packets['timestamp'] > ti) & (packets['timestamp'] < tf)
     packets_ev = packets[pckt_mask]
 
     x,y,z,dQ = HitParser.hit_parser_charge(t0,
@@ -96,19 +99,15 @@ def plot_event(ax, packets, event_id, t0_grp, geom_dict, run_config):
 def plot_tracks(ax, packets, tracks, assn, event_id, t0_grp, geom_dict, run_config):
     t0 = t0_grp[event_id][0]
     print("--------event_id: ", event_id)
-    pckt_mask = (packets['timestamp'] > t0) & (packets['timestamp'] < t0 + 3330)
+    ti = t0 + run_config['time_interval'][0]*run_config['CLOCK_CYCLE']
+    tf = t0 + run_config['time_interval'][1]*run_config['CLOCK_CYCLE']
+
+    pckt_mask = (packets['timestamp'] > ti) & (packets['timestamp'] < tf)
     track_ev_id = np.unique(EvtParser.packet_to_eventid(assn, tracks)[pckt_mask])
     print(track_ev_id)
 
     track_mask = tracks['eventID'] == track_ev_id
     tracks_ev = tracks[track_mask]
-
-    # x,y,z,dQ = HitParser.hit_parser_charge(t0,
-    #                                        packets_ev,
-    #                                        geom_dict,
-    #                                        run_config)
-
-    # x, y, z, dE = tracks['x'], tracks['y'], tracks['z'], tracks['dE']
 
     xStart = tracks_ev['x_start']
     yStart = tracks_ev['y_start']
@@ -118,10 +117,6 @@ def plot_tracks(ax, packets, tracks, assn, event_id, t0_grp, geom_dict, run_conf
     yEnd = tracks_ev['y_end']
     zEnd = tracks_ev['z_end']
 
-    # ax.scatter(np.array(x),
-    #            np.array(z),
-    #            np.array(y),
-    #            c = dE)
     xSegs = np.array([xStart, xEnd]).T
     ySegs = np.array([yStart, yEnd]).T
     zSegs = np.array([zStart, zEnd]).T

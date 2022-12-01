@@ -47,6 +47,9 @@ def main(args):
                      dpi = dpi)
     ax = fig.add_subplot(111, projection = '3d')
 
+    draw_boundaries = BooleanVar()
+    draw_boundaries.set(True)
+
     draw_packets = BooleanVar()
     draw_packets.set(True)
     
@@ -61,9 +64,14 @@ def main(args):
 
     def draw_event():
         ax.clear()
-    
-        plotting.draw_boundaries(ax, config)
 
+        ax.set_xlabel(r'x [mm]')
+        ax.set_ylabel(r'y [mm]')
+        ax.set_zlabel(r'z [mm]')
+
+        if draw_boundaries.get():
+            plotting.draw_boundaries(ax, config)
+        
         if draw_packets.get():
             plotting.plot_event(ax, packets, args.eventid, t0_grp,
                                 geom_dict, run_config)
@@ -94,17 +102,24 @@ def main(args):
 
     box = Entry(width = 3)
     box.insert(END, str(args.eventid))
-    box.place(x = figWidth/2 - 1.5 - 100, y = figHeight)
+    box.place(x = figWidth/2 - 1.5 - 200, y = figHeight)
 
     btn_back = Button(text = "previous",
                       width = 5,
                       height = 1)
-    btn_back.place(x = 1.*figWidth/3 - 10 - 100, y = figHeight)
+    btn_back.place(x = 1.*figWidth/3 - 10 - 200, y = figHeight)
     
     btn_next = Button(text = "next",
                       width = 5,
                       height = 1)
-    btn_next.place(x = 2.*figWidth/3 - 10 - 100, y = figHeight)
+    btn_next.place(x = 2.*figWidth/3 - 10 - 200, y = figHeight)
+
+    cPackets = Checkbutton(window, text = 'boundaries',
+                           variable = draw_boundaries,
+                           onvalue = True,
+                           offvalue = False,
+                           command = draw_event)
+    cPackets.place(x = 2.*figWidth/3 - 100, y = figHeight)
 
     cPackets = Checkbutton(window, text = 'packets',
                            variable = draw_packets,
