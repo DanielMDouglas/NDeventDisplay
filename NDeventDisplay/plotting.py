@@ -2,6 +2,8 @@ import numpy as np
 
 from LarpixParser import hit_parser as HitParser
 from LarpixParser import event_parser as EvtParser
+from LarpixParser.geom_to_dict import larpix_layout_to_dict
+from LarpixParser import util
 
 import matplotlib.pyplot as plt
 from matplotlib import cm, colors
@@ -9,8 +11,29 @@ import mpl_toolkits.mplot3d.art3d as art3d
 
 from SLACplots import colors
 
-from . import detector
+from . import detector, utils
 
+def evd_ndlar(larpixFile, eventid):
+
+    packets = larpixFile['packets']
+    tracks = larpixFile['tracks']
+    assn = larpixFile['mc_packets_assn']
+    
+    t0_grp = EvtParser.get_t0(packets)
+
+    config = utils.make_config({"detector": "ndlar"})
+    geom_dict = larpix_layout_to_dict('multi_tile_layout-3.0.40',
+                                      save_dict = False)
+    run_config = util.get_run_config('ndlar-module.yaml',
+                                     use_builtin = True)
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection = '3d')
+
+    draw_boundaries(ax, config)
+    plot_event(ax, packets, eventid, t0_grp, geom_dict, run_config)
+    plot_tracks(ax, packets, tracks, assn, eventid, t0_grp, geom_dict, run_config)
+    
 def draw_boundaries(ax, config):
 
     detector.set_detector_properties(config['detpropFile'],
@@ -77,9 +100,8 @@ def draw_boundaries(ax, config):
 
 def plot_event(ax, packets, event_id, t0_grp, geom_dict, run_config):
     t0 = t0_grp[event_id][0]
-    print("--------event_id: ", event_id)
-    ti = t0 + run_config['time_interval'][0]*run_config['CLOCK_CYCLE']
-    tf = t0 + run_config['time_interval'][1]*run_config['CLOCK_CYCLE']
+    ti = t0 + run_config['time_interval'][0]/run_config['CLOCK_CYCLE']
+    tf = t0 + run_config['time_interval'][1]/run_config['CLOCK_CYCLE']
 
     pckt_mask = (packets['timestamp'] > ti) & (packets['timestamp'] < tf)
     packets_ev = packets[pckt_mask]
@@ -98,14 +120,12 @@ def plot_event(ax, packets, event_id, t0_grp, geom_dict, run_config):
 
 def plot_tracks(ax, packets, tracks, assn, event_id, t0_grp, geom_dict, run_config):
     t0 = t0_grp[event_id][0]
-    print("--------event_id: ", event_id)
-    ti = t0 + run_config['time_interval'][0]*run_config['CLOCK_CYCLE']
-    tf = t0 + run_config['time_interval'][1]*run_config['CLOCK_CYCLE']
+    ti = t0 + run_config['time_interval'][0]/run_config['CLOCK_CYCLE']
+    tf = t0 + run_config['time_interval'][1]/run_config['CLOCK_CYCLE']
 
     pckt_mask = (packets['timestamp'] > ti) & (packets['timestamp'] < tf)
     track_ev_id = np.unique(EvtParser.packet_to_eventid(assn, tracks)[pckt_mask])
-    print(track_ev_id)
-
+    
     track_mask = tracks['eventID'] == track_ev_id
     tracks_ev = tracks[track_mask]
 

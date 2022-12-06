@@ -37,7 +37,7 @@ def main(args):
     window.title('ND Event Viewer')
 
     figWidth, figHeight = 640, 480
-    dpi = 80
+    dpi = args.dpi
 
     winWidth, winHeight = figWidth, figHeight+30
 
@@ -164,6 +164,9 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--detector', type = str,
                         default = "ndlar",
                         help = "detector preset (\"NDLAr\" or \"Module0\")")
+    parser.add_argument('--dpi', type = int,
+                        default = 80,
+                        help = "plot dpi")
 
     args = parser.parse_args()
 
