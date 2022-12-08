@@ -11,7 +11,7 @@ import mpl_toolkits.mplot3d.art3d as art3d
 
 from SLACplots import colors
 
-from . import detector, utils
+from . import detector, utils, voxelize
 
 def evd_ndlar(larpixFile, eventid):
 
@@ -39,6 +39,8 @@ def draw_boundaries(ax, config):
     detector.set_detector_properties(config['detpropFile'],
                                      config['pixelFile'])
 
+    patchCollection = []
+
     for it in range(0,detector.TPC_BORDERS.shape[0],2):
         anode1 = plt.Rectangle((detector.TPC_BORDERS[it][0][0], detector.TPC_BORDERS[it][1][0]),
                                detector.TPC_BORDERS[it][0][1]-detector.TPC_BORDERS[it][0][0], 
@@ -65,39 +67,36 @@ def draw_boundaries(ax, config):
         z_cathode = (detector.TPC_BORDERS[it][2][0]+detector.TPC_BORDERS[it+1][2][0])/2
         art3d.pathpatch_2d_to_3d(cathode, z=z_cathode, zdir="y")
 
-        ax.plot((detector.TPC_BORDERS[it][0][0],detector.TPC_BORDERS[it][0][0]),
-                (detector.TPC_BORDERS[it][2][0],detector.TPC_BORDERS[it+1][2][0]),
-                (detector.TPC_BORDERS[it][1][0],detector.TPC_BORDERS[it][1][0]),
-                lw=1,color='gray')
+        edge1 = ax.plot((detector.TPC_BORDERS[it][0][0],detector.TPC_BORDERS[it][0][0]),
+                        (detector.TPC_BORDERS[it][2][0],detector.TPC_BORDERS[it+1][2][0]),
+                        (detector.TPC_BORDERS[it][1][0],detector.TPC_BORDERS[it][1][0]),
+                        lw=1,color='gray')
         
-        ax.plot((detector.TPC_BORDERS[it][0][0],detector.TPC_BORDERS[it][0][0]),
-                (detector.TPC_BORDERS[it][2][0],detector.TPC_BORDERS[it+1][2][0]),
-                (detector.TPC_BORDERS[it][1][1],detector.TPC_BORDERS[it][1][1]),
-                lw=1,color='gray')
+        edge2 = ax.plot((detector.TPC_BORDERS[it][0][0],detector.TPC_BORDERS[it][0][0]),
+                        (detector.TPC_BORDERS[it][2][0],detector.TPC_BORDERS[it+1][2][0]),
+                        (detector.TPC_BORDERS[it][1][1],detector.TPC_BORDERS[it][1][1]),
+                        lw=1,color='gray')
 
-        ax.plot((detector.TPC_BORDERS[it][0][1],detector.TPC_BORDERS[it][0][1]),
-                (detector.TPC_BORDERS[it][2][0],detector.TPC_BORDERS[it+1][2][0]),
-                (detector.TPC_BORDERS[it][1][0],detector.TPC_BORDERS[it][1][0]),
-                lw=1,color='gray')
+        edge3 = ax.plot((detector.TPC_BORDERS[it][0][1],detector.TPC_BORDERS[it][0][1]),
+                        (detector.TPC_BORDERS[it][2][0],detector.TPC_BORDERS[it+1][2][0]),
+                        (detector.TPC_BORDERS[it][1][0],detector.TPC_BORDERS[it][1][0]),
+                        lw=1,color='gray')
 
-        ax.plot((detector.TPC_BORDERS[it][0][1],detector.TPC_BORDERS[it][0][1]),
-                (detector.TPC_BORDERS[it][2][0],detector.TPC_BORDERS[it+1][2][0]),
-                (detector.TPC_BORDERS[it][1][1],detector.TPC_BORDERS[it][1][1]),
-                lw=1,color='gray')
+        edge4 = ax.plot((detector.TPC_BORDERS[it][0][1],detector.TPC_BORDERS[it][0][1]),
+                        (detector.TPC_BORDERS[it][2][0],detector.TPC_BORDERS[it+1][2][0]),
+                        (detector.TPC_BORDERS[it][1][1],detector.TPC_BORDERS[it][1][1]),
+                        lw=1,color='gray')
 
-    ax.set_xlim(detector.TPC_BORDERS[0][0][0],detector.TPC_BORDERS[-1][0][1])
-    ax.set_ylim(detector.TPC_BORDERS[0][2][0],detector.TPC_BORDERS[-1][2][0])
-    ax.set_zlim(detector.TPC_BORDERS[0][1][0],detector.TPC_BORDERS[-1][1][1])
+        patchCollection.append(anode1)
+        patchCollection.append(anode2)
+        patchCollection.append(cathode)
+        patchCollection.append(edge1[0])
+        patchCollection.append(edge2[0])
+        patchCollection.append(edge3[0])
+        patchCollection.append(edge4[0])
 
-    xSpan = np.max(detector.TPC_BORDERS[:,0,:]) - np.min(detector.TPC_BORDERS[:,0,:])
-    ySpan = np.max(detector.TPC_BORDERS[:,2,:]) - np.min(detector.TPC_BORDERS[:,2,:])
-    zSpan = np.max(detector.TPC_BORDERS[:,1,:]) - np.min(detector.TPC_BORDERS[:,1,:])
-
-    ax.set_box_aspect((xSpan/100, ySpan/100, zSpan/100))
-    ax.grid(False)
-    ax.xaxis.set_major_locator(plt.MaxNLocator(5))
-    ax.yaxis.set_major_locator(plt.MaxNLocator(5))                                    
-
+    return patchCollection
+    
 def plot_event(ax, packets, event_id, t0_grp, geom_dict, run_config):
     t0 = t0_grp[event_id][0]
     ti = t0 + run_config['time_interval'][0]/run_config['CLOCK_CYCLE']
@@ -112,11 +111,14 @@ def plot_event(ax, packets, event_id, t0_grp, geom_dict, run_config):
                                            run_config,
                                            drift_model = 1)
 
-    ax.scatter(np.array(z)/10,
-               np.array(x)/10,
-               np.array(y)/10,
-               c = dQ,
-               cmap = 'SLACjet')
+    hitCollection = []
+    hitCollection.append(ax.scatter(np.array(z)/10,
+                                    np.array(x)/10,
+                                    np.array(y)/10,
+                                    c = dQ,
+                                    cmap = 'SLACjet'))
+
+    return hitCollection
 
 def plot_tracks(ax, packets, tracks, assn, event_id, t0_grp, geom_dict, run_config):
     t0 = t0_grp[event_id][0]
@@ -141,9 +143,38 @@ def plot_tracks(ax, packets, tracks, assn, event_id, t0_grp, geom_dict, run_conf
     ySegs = np.array([yStart, yEnd]).T
     zSegs = np.array([zStart, zEnd]).T
 
+    segmentCollection = []
     for xSeg, ySeg, zSeg in zip(xSegs, ySegs, zSegs):
-        ax.plot(xSeg,
-                zSeg,
-                ySeg,
-                color = colors.SLACred
-                )
+        segmentCollection.append(ax.plot(xSeg,
+                                         zSeg,
+                                         ySeg,
+                                         color = colors.SLACred
+                                         )[0])
+
+    return segmentCollection
+
+def plot_edep_voxels(ax, packets, tracks, assn, event_id, t0_grp, geom_dict, run_config):
+    t0 = t0_grp[event_id][0]
+    ti = t0 + run_config['time_interval'][0]/run_config['CLOCK_CYCLE']
+    tf = t0 + run_config['time_interval'][1]/run_config['CLOCK_CYCLE']
+
+    pckt_mask = (packets['timestamp'] > ti) & (packets['timestamp'] < tf)
+    track_ev_id = np.unique(EvtParser.packet_to_eventid(assn, tracks)[pckt_mask])
+    
+    track_mask = tracks['eventID'] == track_ev_id
+    tracks_ev = tracks[track_mask]
+
+    coords, dE = voxelize.voxelize(tracks_ev)
+
+    x = np.array([coord[0] for coord in coords])
+    y = np.array([coord[1] for coord in coords])
+    z = np.array([coord[2] for coord in coords])
+
+    edepCollection = []
+    edepCollection.append(ax.scatter(np.array(x),
+                                     np.array(z),
+                                     np.array(y),
+                                     c = dE,
+                                     cmap = 'SLACjet'))
+
+    return edepCollection

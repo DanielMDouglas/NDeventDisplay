@@ -16,6 +16,8 @@ import mpl_toolkits.mplot3d.art3d as art3d
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
                                                NavigationToolbar2Tk)
 
+import numpy as np
+
 def main(args):
     config = make_config(args)
 
@@ -49,92 +51,181 @@ def main(args):
 
     draw_boundaries = BooleanVar()
     draw_boundaries.set(True)
-
+    
     draw_packets = BooleanVar()
     draw_packets.set(True)
     
     draw_tracks = BooleanVar()
     draw_tracks.set(False)
-    
+
+    draw_edepvox = BooleanVar()
+    draw_edepvox.set(False)
+
     current_event = args.eventid
 
+    state = {"current_bounds": [],
+             "current_hits": [],
+             "current_tracks": [],
+             "current_edep": []}
+    
     canvas = FigureCanvasTkAgg(fig, master = window)
     canvas.draw()
     canvas.get_tk_widget().place(x = 0, y = 0)
 
     def draw_event():
-        ax.clear()
 
-        ax.set_xlabel(r'x [mm]')
-        ax.set_ylabel(r'y [mm]')
-        ax.set_zlabel(r'z [mm]')
+        # redrawing the boundaries takes a long time
+        # store the current state only do this if it's changed
+        update_bounds()
 
-        if draw_boundaries.get():
-            plotting.draw_boundaries(ax, config)
+        update_packets()
+
+        update_tracks()
+
+        update_edep()
+
+        update_box()
+
+        xSpan = np.max(detector.TPC_BORDERS[:,0,:]) - np.min(detector.TPC_BORDERS[:,0,:])
+        ySpan = np.max(detector.TPC_BORDERS[:,2,:]) - np.min(detector.TPC_BORDERS[:,2,:])
+        zSpan = np.max(detector.TPC_BORDERS[:,1,:]) - np.min(detector.TPC_BORDERS[:,1,:])
         
-        if draw_packets.get():
-            plotting.plot_event(ax, packets, args.eventid, t0_grp,
-                                geom_dict, run_config)
-
-        if draw_tracks.get():
-            plotting.plot_tracks(ax, packets, tracks, assn,
-                                 args.eventid, t0_grp,
-                                 geom_dict, run_config)
-
-        box.delete(0, 'end')
-        box.insert(END, str(args.eventid))
+        ax.set_box_aspect((xSpan/100, ySpan/100, zSpan/100))
+        ax.grid(False)
+        ax.xaxis.set_major_locator(plt.MaxNLocator(5))
+        ax.yaxis.set_major_locator(plt.MaxNLocator(5))                                    
 
         canvas.draw()
 
+    def update_box():
+        box.delete(0, 'end')
+        box.insert(END, str(args.eventid))
+        
+    def update_bounds():
+        for shape in state["current_bounds"]:
+            print(shape)
+            shape.remove()
+        state["current_bounds"] = []
+
+        if draw_boundaries.get():
+            state["current_bounds"] = plotting.draw_boundaries(ax, config)
+
+        canvas.draw()
+
+    def update_packets():
+        for hit in state["current_hits"]:
+            hit.remove()
+        state["current_hits"] = []
+
+        if draw_packets.get():
+            state["current_hits"] = plotting.plot_event(ax, packets,
+                                                        args.eventid,
+                                                        t0_grp,
+                                                        geom_dict,
+                                                        run_config)
+
+        canvas.draw()
+            
+    def update_tracks():
+        for track in state["current_tracks"]:
+            track.remove()
+        state["current_tracks"] = []
+
+        if draw_tracks.get():
+            state["current_tracks"] = plotting.plot_tracks(ax, packets, tracks, assn,
+                                                           args.eventid, t0_grp,
+                                                           geom_dict, run_config)
+        canvas.draw()
+            
+    def update_edep():
+        for edep in state["current_edep"]:
+            edep.remove()
+        state["current_edep"] = []
+
+        if draw_edepvox.get():
+            state["current_edep"] = plotting.plot_edep_voxels(ax, packets, tracks, assn,
+                                                              args.eventid, t0_grp,
+                                                              geom_dict, run_config)
+
+        canvas.draw()
+
+    def update_event():
+        prevXlim = ax.get_xlim()
+        prevYlim = ax.get_ylim()
+        prevZlim = ax.get_zlim()
+        prevElev = ax.elev
+        prevAzim = ax.azim
+
+        # ax.clear()
+            
+        ax.set_xlim(prevXlim)
+        ax.set_ylim(prevYlim)
+        ax.set_zlim(prevZlim)
+
+        update_packets()
+        update_tracks()
+        update_edep()
+
+        update_box()
+
+        canvas.draw()
+        
     def goto_event(event):
         args.eventid = int(box.get())
-        draw_event()
-
+        update_event()
+        
     def decrement_event(event):
         if args.eventid > 0:
             args.eventid -= 1
-        draw_event()
+        update_event()
 
     def increment_event(event):
         if args.eventid < maxEventID - 1:
             args.eventid += 1
-        draw_event()
+        update_event()
 
     box = Entry(width = 3)
     box.insert(END, str(args.eventid))
-    box.place(x = figWidth/2 - 1.5 - 200, y = figHeight)
+    box.place(x = 75, y = figHeight)
 
     btn_back = Button(text = "previous",
                       width = 5,
                       height = 1)
-    btn_back.place(x = 1.*figWidth/3 - 10 - 200, y = figHeight)
+    btn_back.place(x = 5, y = figHeight)
     
     btn_next = Button(text = "next",
                       width = 5,
                       height = 1)
-    btn_next.place(x = 2.*figWidth/3 - 10 - 200, y = figHeight)
+    btn_next.place(x = 100, y = figHeight)
 
-    cPackets = Checkbutton(window, text = 'boundaries',
-                           variable = draw_boundaries,
-                           onvalue = True,
-                           offvalue = False,
-                           command = draw_event)
-    cPackets.place(x = 2.*figWidth/3 - 100, y = figHeight)
-
+    cBounds = Checkbutton(window, text = 'boundaries',
+                          variable = draw_boundaries,
+                          onvalue = True,
+                          offvalue = False,
+                          command = update_bounds)
+    cBounds.place(x = 200, y = figHeight)
+    
     cPackets = Checkbutton(window, text = 'packets',
                            variable = draw_packets,
                            onvalue = True,
                            offvalue = False,
-                           command = draw_event)
-    cPackets.place(x = 2.*figWidth/3, y = figHeight)
+                           command = update_packets)
+    cPackets.place(x = 300, y = figHeight)
 
     cTracks = Checkbutton(window, text = 'tracks',
                           variable = draw_tracks,
                           onvalue = True,
                           offvalue = False,
-                          command = draw_event)
-    cTracks.place(x = 2.*figWidth/3 + 100, y = figHeight)
-        
+                          command = update_tracks)
+    cTracks.place(x = 400, y = figHeight)
+
+    cEdepVox = Checkbutton(window, text = 'edep voxels',
+                           variable = draw_edepvox,
+                           onvalue = True,
+                           offvalue = False,
+                           command = update_edep)
+    cEdepVox.place(x = 500, y = figHeight)
+
     window.bind("<Return>", goto_event)
     window.bind("<Right>", increment_event)
     window.bind("<Left>", decrement_event)
@@ -143,7 +234,15 @@ def main(args):
     btn_next.bind("<Button-1>", increment_event)
 
     draw_event()
-    
+
+    ax.set_xlim(detector.TPC_BORDERS[0][0][0],detector.TPC_BORDERS[-1][0][1])
+    ax.set_ylim(detector.TPC_BORDERS[0][2][0],detector.TPC_BORDERS[-1][2][0])
+    ax.set_zlim(detector.TPC_BORDERS[0][1][0],detector.TPC_BORDERS[-1][1][1])
+
+    ax.set_xlabel(r'x [cm]')
+    ax.set_ylabel(r'y [cm]')
+    ax.set_zlabel(r'z [cm]')
+
     window.mainloop()
     
 if __name__ == '__main__':
