@@ -24,6 +24,7 @@ def main(args):
     f = h5py.File(args.infile, 'r')
     packets = f['packets']
     tracks = f['tracks']
+    voxels = f['track_voxels']
     assn = f['mc_packets_assn']
     
     geom_dict = larpix_layout_to_dict(config['larpix_layout_name'],
@@ -103,7 +104,6 @@ def main(args):
         
     def update_bounds():
         for shape in state["current_bounds"]:
-            print(shape)
             shape.remove()
         state["current_bounds"] = []
 
@@ -143,7 +143,8 @@ def main(args):
         state["current_edep"] = []
 
         if draw_edepvox.get():
-            state["current_edep"] = plotting.plot_edep_voxels(ax, packets, tracks, assn,
+            state["current_edep"] = plotting.plot_edep_voxels(ax, packets, tracks,
+                                                              voxels, assn,
                                                               args.eventid, t0_grp,
                                                               geom_dict, run_config)
 

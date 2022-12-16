@@ -33,6 +33,15 @@ def evd_ndlar(larpixFile, eventid):
     draw_boundaries(ax, config)
     plot_event(ax, packets, eventid, t0_grp, geom_dict, run_config)
     plot_tracks(ax, packets, tracks, assn, eventid, t0_grp, geom_dict, run_config)
+
+    ax.set_xlim(detector.TPC_BORDERS[0][0][0],detector.TPC_BORDERS[-1][0][1])
+    ax.set_ylim(detector.TPC_BORDERS[0][2][0],detector.TPC_BORDERS[-1][2][0])
+    ax.set_zlim(detector.TPC_BORDERS[0][1][0],detector.TPC_BORDERS[-1][1][1])
+
+    ax.set_xlabel(r'x [cm]')
+    ax.set_ylabel(r'y [cm]')
+    ax.set_zlabel(r'z [cm]')
+
     
 def draw_boundaries(ax, config):
 
@@ -127,9 +136,18 @@ def plot_tracks(ax, packets, tracks, assn, event_id, t0_grp, geom_dict, run_conf
 
     pckt_mask = (packets['timestamp'] > ti) & (packets['timestamp'] < tf)
     track_ev_id = np.unique(EvtParser.packet_to_eventid(assn, tracks)[pckt_mask])
-    
-    track_mask = tracks['eventID'] == track_ev_id
-    tracks_ev = tracks[track_mask]
+
+    # print(track_ev_id)
+
+    if len(track_ev_id) == 1:
+        track_mask = tracks['eventID'] == track_ev_id
+        tracks_ev = tracks[track_mask]
+    else:
+        tracks_ev = np.concatenate([tracks[tracks['eventID'] == this_ev_id]
+                                    for this_ev_id in track_ev_id])
+        
+    # print(track_mask)
+    # print(tracks_ev)
 
     xStart = tracks_ev['x_start']
     yStart = tracks_ev['y_start']
@@ -153,22 +171,21 @@ def plot_tracks(ax, packets, tracks, assn, event_id, t0_grp, geom_dict, run_conf
 
     return segmentCollection
 
-def plot_edep_voxels(ax, packets, tracks, assn, event_id, t0_grp, geom_dict, run_config):
+def plot_edep_voxels(ax, packets, tracks, voxels, assn, event_id, t0_grp, geom_dict, run_config):
     t0 = t0_grp[event_id][0]
     ti = t0 + run_config['time_interval'][0]/run_config['CLOCK_CYCLE']
     tf = t0 + run_config['time_interval'][1]/run_config['CLOCK_CYCLE']
 
     pckt_mask = (packets['timestamp'] > ti) & (packets['timestamp'] < tf)
-    track_ev_id = np.unique(EvtParser.packet_to_eventid(assn, tracks)[pckt_mask])
+    vox_ev_id = np.unique(EvtParser.packet_to_eventid(assn, tracks)[pckt_mask])
     
-    track_mask = tracks['eventID'] == track_ev_id
-    tracks_ev = tracks[track_mask]
+    vox_mask = voxels['eventID'] == vox_ev_id
+    vox_ev = voxels[vox_mask]
 
-    coords, dE = voxelize.voxelize(tracks_ev)
-
-    x = np.array([coord[0] for coord in coords])
-    y = np.array([coord[1] for coord in coords])
-    z = np.array([coord[2] for coord in coords])
+    x = vox_ev['xBin']
+    y = vox_ev['yBin']
+    z = vox_ev['zBin']
+    dE = vox_ev['dE']
 
     edepCollection = []
     edepCollection.append(ax.scatter(np.array(x),
